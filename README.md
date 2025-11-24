@@ -1,9 +1,4 @@
 # NutriBreak API
-
-> **Global Solution 2025 - FIAP**  
-> **Disciplina:** DevOps Tools & Cloud Computing  
-> **Autor:** Gustavo Bretas | **RM:** 555708
-
 ---
 
 ## Sobre o Projeto
