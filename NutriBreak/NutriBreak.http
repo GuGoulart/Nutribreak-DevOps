@@ -1,0 +1,6 @@
+@NutriBreak_HostAddress = http://localhost:5018
+
+GET {{NutriBreak_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

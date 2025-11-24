@@ -1,0 +1,232 @@
+# =====================================================
+# .gitignore - NutriBreak Project
+# =====================================================
+
+## .NET Core
+*.swp
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+nupkg/
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / Rider
+.vs/
+.vscode/
+.idea/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+mono_crash.*
+
+# User-specific files
+*.pidb
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Build Results
+[Aa]rtifacts/
+_UpgradeReport_Files/
+Backup*/
+UpgradeLog*.XML
+UpgradeLog*.htm
+ServiceFabricBackup/
+*.rptproj.bak
+
+# .NET Core
+project.fragment.lock.json
+artifacts/
+
+# StyleCop
+StyleCopReport.xml
+
+# Files built by Visual Studio
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.svclog
+*.scc
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+[Dd]ebugPS/
+[Rr]eleasePS/
+dlldata.c
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# Microsoft Azure Web App publish settings
+*.PublishSettings
+*.Publish.xml
+
+# Entity Framework Migrations
+**/Migrations/**/*.Designer.cs
+**/Migrations/**/*.resx
+
+# SQL Server files
+*.mdf
+*.ldf
+*.ndf
+
+# Local databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# User secrets (IMPORTANTE!)
+secrets.json
+appsettings.Development.json
+appsettings.Staging.json
+**/appsettings.*.json
+!appsettings.json
+!appsettings.Production.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# API Keys e Secrets (CRÍTICO!)
+*apikey*
+*api-key*
+*secret*
+*password*
+*credentials*
+*.pem
+*.key
+*.cer
+*.crt
+*.pfx
+
+# Azure specific
+*.azurePubxml
+*.pubxml
+*.azurePubxml.user
+PublishScripts/
+
+# Azure Functions
+local.settings.json
+__blobstorage__
+__queuestorage__
+__azurite_db*__.json
+
+# Local History for Visual Studio
+.localhistory/
+
+# BeatPulse healthcheck temp database
+healthchecksdb
+
+# Backup folder for Package Reference Convert tool
+MigrationBackup/
+
+# Ionide (F# tooling)
+.ionide/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Node (se houver frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage reports
+coverage/
+*.coverage
+*.coveragexml
+TestResults/
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+
+# Azure infrastructure info (contém senhas!)
+azure-infrastructure-info.txt
+
+# =====================================================
+# IMPORTANTE PARA AZURE DEVOPS
+# =====================================================
+# NÃO adicionar azure-pipelines.yml ao .gitignore
+# NÃO adicionar script.sql ao .gitignore
+# Estes arquivos DEVEM estar no repositório!
+# =====================================================

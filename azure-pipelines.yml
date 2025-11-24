@@ -1,0 +1,204 @@
+trigger:
+  branches:
+    include:
+      - main
+      - master
+  paths:
+    exclude:
+      - README.md
+      - docs/**
+      - .gitignore
+
+# =====================================================
+# VARIÁVEIS GLOBAIS
+# =====================================================
+variables:
+  buildConfiguration: 'Release'
+  dotnetSdkVersion: '8.x'
+  azureSubscription: 'MyAzureSubscription' # ← Criar Service Connection no Azure DevOps
+  webAppName: 'nutribreak-api-16762' # ✅ SEU APP SERVICE
+  resourceGroupName: 'rg-nutribreak' # ✅ SEU RESOURCE GROUP
+
+# =====================================================
+# AGENT POOL
+# =====================================================
+pool:
+  vmImage: 'windows-latest'
+
+# =====================================================
+# STAGES
+# =====================================================
+stages:
+
+# =====================================================
+# STAGE 1: BUILD E TESTES (CI)
+# =====================================================
+- stage: Build
+  displayName: 'Build and Test (CI)'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build .NET Application'
+    steps:
+    
+    # STEP 1: Setup .NET SDK
+    - task: UseDotNet@2
+      displayName: 'Install .NET SDK $(dotnetSdkVersion)'
+      inputs:
+        packageType: 'sdk'
+        version: '$(dotnetSdkVersion)'
+        installationPath: $(Agent.ToolsDirectory)/dotnet
+    
+    # STEP 2: Restore NuGet Packages
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet Packages'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+        feedsToUse: 'select'
+    
+    # STEP 3: Build da Aplicação
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Application'
+      inputs:
+        command: 'build'
+        projects: '**/*.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+    
+    # STEP 4: Executar Testes Unitários (OBRIGATÓRIO)
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Unit Tests'
+      inputs:
+        command: 'test'
+        projects: '**/*Tests.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-build --collect:"XPlat Code Coverage"'
+        publishTestResults: true
+    
+    # STEP 5: Publicar Resultados dos Testes
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'
+        searchFolder: '$(Agent.TempDirectory)'
+        mergeTestResults: true
+        failTaskOnFailedTests: true
+        testRunTitle: 'NutriBreak Unit Tests'
+    
+    # STEP 6: Publicar Code Coverage
+    - task: PublishCodeCoverageResults@2
+      displayName: 'Publish Code Coverage'
+      condition: succeededOrFailed()
+      inputs:
+        codeCoverageTool: 'Cobertura'
+        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+        failIfCoverageEmpty: false
+    
+    # STEP 7: Publish da Aplicação
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish Application'
+      inputs:
+        command: 'publish'
+        publishWebProjects: true
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory) --no-build'
+        zipAfterPublish: true
+        modifyOutputPath: true
+    
+    # STEP 8: Publicar Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Build Artifact'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'nutribreak-drop'
+        publishLocation: 'Container'
+
+# =====================================================
+# STAGE 2: DEPLOY (CD)
+# =====================================================
+- stage: Deploy
+  displayName: 'Deploy to Azure (CD)'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeployWeb
+    displayName: 'Deploy to Azure App Service'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          
+          # STEP 1: Download Artifact
+          - task: DownloadBuildArtifacts@1
+            displayName: 'Download Build Artifact'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'nutribreak-drop'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          
+          # STEP 2: Deploy para Azure App Service
+          - task: AzureRmWebAppDeployment@4
+            displayName: 'Deploy to Azure App Service'
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              appType: 'webApp'
+              WebAppName: '$(webAppName)'
+              packageForLinux: '$(System.ArtifactsDirectory)/nutribreak-drop/**/*.zip'
+              enableCustomDeployment: true
+              DeploymentType: 'zipDeploy'
+              TakeAppOfflineFlag: true
+              JSONFiles: '**/appsettings.json'
+          
+          # STEP 3: Restart App Service
+          - task: AzureAppServiceManage@0
+            displayName: 'Restart Azure App Service'
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              Action: 'Restart Azure App Service'
+              WebAppName: '$(webAppName)'
+
+# =====================================================
+# STAGE 3: SMOKE TESTS (Validação Pós-Deploy)
+# =====================================================
+- stage: SmokeTests
+  displayName: 'Smoke Tests (Post-Deploy)'
+  dependsOn: Deploy
+  condition: succeeded()
+  jobs:
+  - job: HealthCheck
+    displayName: 'Validate API Health'
+    steps:
+    
+    - task: PowerShell@2
+      displayName: 'Check API Health Endpoint with Retries'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $url = "https://$(webAppName).azurewebsites.net/health"
+          $maxRetries = 5
+          $delay = 10
+          $success = $false
+
+          Write-Host "Verificando saúde da API em $url..."
+
+          for ($i = 1; $i -le $maxRetries; $i++) {
+              try {
+                  $response = Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 30
+                  if ($response -eq "Healthy") {
+                      Write-Host "✅ API está saudável!"
+                      $success = $true
+                      break
+                  } else {
+                      Write-Warning "Resposta inesperada: $response"
+                  }
+              } catch {
+                  Write-Warning "Tentativa $i falhou: $($_.Exception.Message). Retry em $delay segundos..."
+                  Start-Sleep -Seconds $delay
+              }
+          }
+
+          if (-not $success) {
+              Write-Error "❌ API não respondeu corretamente após $maxRetries tentativas."
+              exit 1
+          }
